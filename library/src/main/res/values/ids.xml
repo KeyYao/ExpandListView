@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="expandlistview_parent_layout"/>
+    <item type="id" name="expandlistview_children_layout"/>
+    <item type="id" name="expandlistview_parent_position_tag"/>
+    <item type="id" name="expandlistview_child_position_tag"/>
+    <item type="id" name="expandlistview_children_layout_holder_tag"/>
+
+</resources>

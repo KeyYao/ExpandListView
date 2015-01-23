@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="item_press">#E8941A</color>
+    <color name="parent_color">#3377CC</color>
+    <color name="child_color">#77FF55</color>
+</resources>
