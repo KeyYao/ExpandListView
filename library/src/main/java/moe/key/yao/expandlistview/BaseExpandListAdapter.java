@@ -228,8 +228,10 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
      */
     public void openAllItem() {
         for (int i = 0 ; i < getParentCount() ; i ++) {
-            if (!mPositionSet.contains(i)) {
-                mPositionSet.add(i);
+            if (isCanExpand(i)) {
+                if (!mPositionSet.contains(i)) {
+                    mPositionSet.add(i);
+                }
             }
         }
         notifyDataSetChanged();

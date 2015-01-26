@@ -229,7 +229,7 @@ public class ExpandListView extends ListView {
 
                     }
                 } else {
-                    if (!mAllItemCanOpen) { // 如果只允许一个Item打开，则关闭之前所打开的Item
+                    if (beforePosition != - 1 && getExpandAdapter().isCanExpand(beforePosition) && !mAllItemCanOpen) { // 如果只允许一个Item打开，则关闭之前所打开的Item
                         runCloseExpandAnimation(((View) getExpandAdapter().getItem(beforePosition)).findViewById(R.id.expandlistview_children_layout), beforePosition, true);
                         beforePosition = position;
                     }

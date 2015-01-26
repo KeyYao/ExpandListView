@@ -60,7 +60,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 break;
 
             case R.id.all_item_open_btn:
-                intent.putExtra("all_can_open", false);
+                intent.putExtra("all_can_open", true);
                 intent.putExtra("click_close", true);
                 intent.putExtra("all_item_open", true);
                 break;
