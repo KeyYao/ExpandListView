@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +42,16 @@ public class SimpleActivity extends ActionBarActivity {
             for (int j = 0 ; j < (new Random().nextInt(5) + 2) ; j ++) {
                 subStr.add("Sub Item " + (j + 1));
             }
-            m.setSubString(subStr);
+            if (i % 2 == 0) {
+                m.setSubString(subStr);
+            }
             data.add(m);
         }
         adapter = new MyListAdapter(this, data);
         list.setAdapter(adapter);
         list.setExpandDuration(500);
         list.setExpandInterpolator(new DecelerateInterpolator());
+        list.setStatusArrowViewId(R.id.arrow_image);
 
         boolean allCanOpen = getIntent().getBooleanExtra("all_can_open", false);
         boolean clickClose = getIntent().getBooleanExtra("click_close", false);
@@ -67,7 +71,7 @@ public class SimpleActivity extends ActionBarActivity {
 
         @Override
         public void onItemClick(View view, int position) {
-//            Toast.makeText(MainActivity.this, "Item [" + (position + 1) + "]", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(SimpleActivity.this, "Item [" + (position + 1) + "]", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -75,7 +79,7 @@ public class SimpleActivity extends ActionBarActivity {
 
         @Override
         public void onItemClick(View view, int parentPosition, int childPosition) {
-//            Toast.makeText(MainActivity.this, "Item [" + (parentPosition + 1) + " , " + (childPosition + 1) + "]", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(SimpleActivity.this, "Item [" + (parentPosition + 1) + " , " + (childPosition + 1) + "]", Toast.LENGTH_SHORT).show();
         }
     }
 

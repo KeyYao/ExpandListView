@@ -1,6 +1,7 @@
 package moe.key.yao.expandlistview;
 
 import android.content.Context;
+import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
@@ -24,6 +25,7 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
     private Set<Integer> mPositionSet;
     private View.OnClickListener mChildClickListener = null;
 
+    private int mStatusArrowViewId = 0;
     private Map<Integer, View> viewMap;
 
     public BaseExpandListAdapter(Context context) {
@@ -93,6 +95,7 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
                     mHolder.childrenLayout.addView(childView);
                 }
                 mHolder.childrenLayout.setTag(R.id.expandlistview_children_layout_holder_tag, childHolder);
+                mHolder.childrenLayout.setOnClickListener(null);
             } else {
 
                 // 当Item不可展开的时候，设置children的个数为0
@@ -102,6 +105,7 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
 
                 // 隐藏childrenLayout
                 mHolder.childrenLayout.setVisibility(View.GONE);
+                mHolder.childrenLayout.setOnClickListener(null);
             }
 
             // add view to BaseLayout
@@ -127,11 +131,11 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
                     for (int i = 0 ; i < existChildCount ; i ++) {
                         // 当前存在的子项比所需要的子项多，则隐藏多余的子项
                         if (i >= childCount) {
+                            childHolder.childrens.get(i).setOnClickListener(null);
                             childHolder.childrens.get(i).setVisibility(View.GONE);
                             continue;
                         }
 
-                        // 重新getChildView，设置childView的值
                         childHolder.childrens.get(i).setVisibility(View.VISIBLE);
                         View childView = childHolder.childrens.get(i);
                         childView.setVisibility(View.VISIBLE);
@@ -146,12 +150,16 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
                         // 当前存在的子项比所需要的子项少，则创建缺少的子项
                         if (i >= existChildCount) {
                             View childView = getChildView(position, i, null, mHolder.childrenLayout);
+                            childView.setVisibility(View.VISIBLE);
+                            childView.setTag(R.id.expandlistview_parent_position_tag, position);
+                            childView.setTag(R.id.expandlistview_child_position_tag, i);
+                            childView.setOnClickListener(mChildClickListener);
+
                             childHolder.childrens.add(childView);
                             mHolder.childrenLayout.addView(childView);
                             continue;
                         }
 
-                        // 重新getChildView，设置childView的值
                         childHolder.childrens.get(i).setVisibility(View.VISIBLE);
                         View childView = childHolder.childrens.get(i);
                         childView.setVisibility(View.VISIBLE);
@@ -187,6 +195,10 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
             mHolder.childrenLayout.setVisibility(View.GONE);
         }
 
+        if (mStatusArrowViewId != 0) {
+            resetArrowView(convertView, position);
+        }
+
         viewMap.put(position, convertView);
         return convertView;
     }
@@ -203,6 +215,22 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
     }
 
     /**
+     * 重置显示状态的箭头
+     * @param convertView
+     * @param position
+     */
+    private void resetArrowView(View convertView, int position) {
+        if (!isCanExpand(position)) {
+            return;
+        }
+        if (isItemOpening(position)) {
+            ViewCompat.setRotation(convertView.findViewById(mStatusArrowViewId), 90.0f);
+        } else {
+            ViewCompat.setRotation(convertView.findViewById(mStatusArrowViewId), 0.0f);
+        }
+    }
+
+    /**
      * 获取当前Context
      * @return
      */
@@ -211,16 +239,20 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
     }
 
     /**
-     * 当前父项是否为打开状态
+     * 当前项是否为打开状态
      * @param position
      * @return
      */
-    public boolean isParentOpening(int position) {
+    public boolean isItemOpening(int position) {
         return mPositionSet.contains(position);
     }
 
     public void setChildClickListener(View.OnClickListener l) {
         this.mChildClickListener = l;
+    }
+
+    public void setStatusArrowViewId(int id) {
+        this.mStatusArrowViewId = id;
     }
 
     /**

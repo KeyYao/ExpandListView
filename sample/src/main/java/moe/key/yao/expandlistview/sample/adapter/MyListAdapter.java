@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.List;
@@ -54,12 +55,19 @@ public class MyListAdapter extends BaseExpandListAdapter {
             pHolder = new ParentViewHolder();
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_parent, parent, false);
             pHolder.title = (TextView) convertView.findViewById(R.id.title);
+            pHolder.arrow = (ImageView) convertView.findViewById(R.id.arrow_image);
             convertView.setTag(pHolder);
         } else {
             pHolder = (ParentViewHolder) convertView.getTag();
         }
 
         pHolder.title.setText(mData.get(position).getTitle());
+
+        if (isCanExpand(position)) {
+            pHolder.arrow.setVisibility(View.VISIBLE);
+        } else {
+            pHolder.arrow.setVisibility(View.GONE);
+        }
 
         return convertView;
     }
@@ -82,6 +90,7 @@ public class MyListAdapter extends BaseExpandListAdapter {
 
     private static class ParentViewHolder {
         TextView title;
+        ImageView arrow;
     }
 
     private static class ChildViewHolder {

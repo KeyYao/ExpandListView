@@ -1,6 +1,8 @@
 package moe.key.yao.expandlistview;
 
 import android.content.Context;
+import android.support.v4.view.ViewCompat;
+import android.support.v4.view.ViewPropertyAnimatorCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +17,8 @@ import android.widget.ListView;
  */
 public class ExpandListView extends ListView {
 
+    private static final long ANIMATOR_START_DELAY = 0L;
+
     private long mDuration;
     private Interpolator mInterpolator;
     private OnParentItemClickListener mParentItemClickListener;
@@ -22,9 +26,10 @@ public class ExpandListView extends ListView {
     private boolean mAllItemCanOpen = true;
     private boolean mCanClickClose = true;
     private boolean mOpenAllItem = false;
+    private int mStatusArrowViewId = 0;
 
     // ExpandAnimation use field
-    private boolean mRuningAnimation = false;
+    private boolean mRunningAnimation = false;
     private int beforePosition = -1;
 
     public ExpandListView(Context context) {
@@ -48,6 +53,7 @@ public class ExpandListView extends ListView {
             getExpandAdapter().openAllItem();
         }
         setSelector(R.color.expandlistview_selector);
+        getExpandAdapter().setStatusArrowViewId(mStatusArrowViewId);
     }
 
     /**
@@ -136,6 +142,17 @@ public class ExpandListView extends ListView {
         }
     }
 
+    /**
+     * 设置用于显示Item状态的箭头的View对应的ID，通过该ID所find到的View必须存在于Item的<b>父项</b>中
+     * @param id
+     */
+    public void setStatusArrowViewId(int id) {
+        this.mStatusArrowViewId = id;
+        if (getExpandAdapter() != null) {
+            getExpandAdapter().setStatusArrowViewId(mStatusArrowViewId);
+        }
+    }
+
     private void runOpenExpandAnimation(View view, final int index, final int oldIndex) {
         ExpandAnimation animation = new ExpandAnimation(view, mDuration);
         if (mInterpolator != null) {
@@ -145,7 +162,7 @@ public class ExpandListView extends ListView {
 
             @Override
             public void onAnimationStart(Animation animation) {
-                mRuningAnimation = true;
+                mRunningAnimation = true;
             }
 
             @Override
@@ -156,7 +173,7 @@ public class ExpandListView extends ListView {
             @Override
             public void onAnimationEnd(Animation animation) {
                 if (!mAllItemCanOpen) {
-                    if (oldIndex != -1 && oldIndex != index && getExpandAdapter().isParentOpening(oldIndex)) {
+                    if (oldIndex != -1 && oldIndex != index && getExpandAdapter().isItemOpening(oldIndex)) {
                         getExpandAdapter().updatePositionSet(index, oldIndex);
                     } else {
                         getExpandAdapter().updatePositionSet(index);
@@ -164,19 +181,21 @@ public class ExpandListView extends ListView {
                 } else {
                     getExpandAdapter().updatePositionSet(index);
                 }
-                mRuningAnimation = false;
+                mRunningAnimation = false;
             }
         });
         if (!mAllItemCanOpen) {
             if (oldIndex != -1 && oldIndex != index && oldIndex >= getFirstVisiblePosition() && oldIndex <= getLastVisiblePosition()) {
                 runCloseExpandAnimation(((View) getExpandAdapter().getItem(oldIndex)).findViewById(R.id.expandlistview_children_layout), oldIndex, false);
+                runCloseStatusArrowImageAnimation(((View) getExpandAdapter().getItem(oldIndex)).findViewById(mStatusArrowViewId));
             }
         }
         view.startAnimation(animation);
+        new Thread(new ResetAnimationStatus()).start();
     }
 
     private void runCloseExpandAnimation(View view, final int index, boolean flag) {
-        if (getExpandAdapter().isParentOpening(index)) {
+        if (getExpandAdapter().isItemOpening(index)) {
             ExpandAnimation animation = new ExpandAnimation(view, mDuration);
             if (mInterpolator != null) {
                 animation.setInterpolator(mInterpolator);
@@ -186,7 +205,7 @@ public class ExpandListView extends ListView {
 
                     @Override
                     public void onAnimationStart(Animation animation) {
-                        mRuningAnimation = true;
+                        mRunningAnimation = true;
                     }
 
                     @Override
@@ -197,33 +216,60 @@ public class ExpandListView extends ListView {
                     @Override
                     public void onAnimationEnd(Animation animation) {
                         getExpandAdapter().updatePositionSet(index);
-                        mRuningAnimation = false;
+                        mRunningAnimation = false;
                     }
                 });
             }
             view.startAnimation(animation);
+            new Thread(new ResetAnimationStatus()).start();
         }
+    }
+
+    private void runOpenStatusArrowImageAnimation(View v) {
+        if (mStatusArrowViewId == 0) {
+            return;
+        }
+        ViewPropertyAnimatorCompat animator = ViewCompat.animate(v);
+        animator.rotation(90.0f);
+        animator.setStartDelay(ANIMATOR_START_DELAY);
+        animator.setDuration(mDuration);
+        animator.setInterpolator(mInterpolator);
+        animator.start();
+    }
+
+    private void runCloseStatusArrowImageAnimation(View v) {
+        if (mStatusArrowViewId == 0) {
+            return;
+        }
+        ViewPropertyAnimatorCompat animator = ViewCompat.animate(v);
+        animator.rotation(0.0f);
+        animator.setStartDelay(ANIMATOR_START_DELAY);
+        animator.setDuration(mDuration);
+        animator.setInterpolator(mInterpolator);
+        animator.start();
+
     }
 
     private class ExpandListViewOnItemClickListener implements OnItemClickListener {
 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            if (!mRuningAnimation) {
+            if (!mRunningAnimation) {
                 if (getExpandAdapter().isCanExpand(position)) { // 判断当前Item是否有子项可以展开
-
                     // 获得子项所在的Layout
                     View childrenLayout = view.findViewById(R.id.expandlistview_children_layout);
 
-                    if (!getExpandAdapter().isParentOpening(position)) { // 如果当前Item是关闭状态，则动画展开
+                    if (!getExpandAdapter().isItemOpening(position)) { // 如果当前Item是关闭状态，则动画展开
 
                         runOpenExpandAnimation(childrenLayout, position, beforePosition);
+                        runOpenStatusArrowImageAnimation(view.findViewById(mStatusArrowViewId));
                         beforePosition = position;
 
                     } else { // 如果当前Item是打开状态
 
                         if (mCanClickClose) { // 如果允许点击关闭，则动画关闭当前Item
                             runCloseExpandAnimation(childrenLayout, position, true);
+                            runCloseStatusArrowImageAnimation(view.findViewById(mStatusArrowViewId));
                             beforePosition = position;
                         }
 
@@ -231,6 +277,7 @@ public class ExpandListView extends ListView {
                 } else {
                     if (beforePosition != - 1 && getExpandAdapter().isCanExpand(beforePosition) && !mAllItemCanOpen) { // 如果只允许一个Item打开，则关闭之前所打开的Item
                         runCloseExpandAnimation(((View) getExpandAdapter().getItem(beforePosition)).findViewById(R.id.expandlistview_children_layout), beforePosition, true);
+                        runCloseStatusArrowImageAnimation(((View) getExpandAdapter().getItem(beforePosition)).findViewById(mStatusArrowViewId));
                         beforePosition = position;
                     }
                 }
@@ -256,6 +303,23 @@ public class ExpandListView extends ListView {
                 mChildItemClickListener.onItemClick(v, parentPosition, childPosition);
             }
         }
+    }
+
+    /**
+     * 用于更新当前所执行的动画状态，当展开动画非正常结束时，可以令mRunningAnimation的值设置回false
+     */
+    private class ResetAnimationStatus implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(mDuration);
+                mRunningAnimation = false;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
 }
