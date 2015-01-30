@@ -199,6 +199,9 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
             resetArrowView(convertView, position);
         }
 
+        if (getItemBackgroundResources() != 0) {
+            mHolder.baseLayout.setBackgroundResource(getItemBackgroundResources());
+        }
         viewMap.put(position, convertView);
         return convertView;
     }
@@ -299,6 +302,14 @@ public abstract class BaseExpandListAdapter extends BaseAdapter {
             mPositionSet.remove(oldPosition);
         }
         notifyDataSetChanged();
+    }
+
+    /**
+     * 设置Item背景，返回资源id
+     * @return
+     */
+    protected int getItemBackgroundResources() {
+        return 0;
     }
 
     /**

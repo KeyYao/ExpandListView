@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.AdapterView;
+import android.widget.HeaderViewListAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
@@ -54,6 +55,9 @@ public class ExpandListView extends ListView {
         }
         setSelector(R.color.expandlistview_selector);
         getExpandAdapter().setStatusArrowViewId(mStatusArrowViewId);
+        if (beforePosition != -1) {
+            getExpandAdapter().updatePositionSet(beforePosition);
+        }
     }
 
     /**
@@ -64,6 +68,8 @@ public class ExpandListView extends ListView {
         if (getAdapter() != null) {
             if (getAdapter() instanceof BaseExpandListAdapter) {
                 return (BaseExpandListAdapter) getAdapter();
+            } else if (getAdapter() instanceof HeaderViewListAdapter) {
+                return (BaseExpandListAdapter) ((HeaderViewListAdapter)getAdapter()).getWrappedAdapter();
             }
         }
         return null;
@@ -151,6 +157,15 @@ public class ExpandListView extends ListView {
         if (getExpandAdapter() != null) {
             getExpandAdapter().setStatusArrowViewId(mStatusArrowViewId);
         }
+    }
+
+    /**
+     * 设置默认显示打开状态的Item
+     * @param position
+     */
+    public void setDefaultOpenItemPosition(int position) {
+        this.beforePosition = position;
+        getExpandAdapter().updatePositionSet(beforePosition);
     }
 
     private void runOpenExpandAnimation(View view, final int index, final int oldIndex) {
@@ -254,23 +269,45 @@ public class ExpandListView extends ListView {
 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            int itemPositioin = position;
+
+            // 判断HeaderView的个数
+            if (getHeaderViewsCount() > 0) {
+                // 重新计算position
+                itemPositioin = position - getHeaderViewsCount();
+                // 排除点击HeaderView的position
+                if (itemPositioin < 0) {
+                    return;
+                }
+            }
+
+            // 判断FooterView的个数
+            if (getFooterViewsCount() > 0) {
+                // 重新计算position
+                itemPositioin = position - getFooterViewsCount();
+                // 排除点击FooterView的position
+                if (itemPositioin >= getExpandAdapter().getCount()) {
+                    return;
+                }
+            }
+
             if (!mRunningAnimation) {
-                if (getExpandAdapter().isCanExpand(position)) { // 判断当前Item是否有子项可以展开
+                if (getExpandAdapter().isCanExpand(itemPositioin)) { // 判断当前Item是否有子项可以展开
                     // 获得子项所在的Layout
                     View childrenLayout = view.findViewById(R.id.expandlistview_children_layout);
 
-                    if (!getExpandAdapter().isItemOpening(position)) { // 如果当前Item是关闭状态，则动画展开
+                    if (!getExpandAdapter().isItemOpening(itemPositioin)) { // 如果当前Item是关闭状态，则动画展开
 
-                        runOpenExpandAnimation(childrenLayout, position, beforePosition);
+                        runOpenExpandAnimation(childrenLayout, itemPositioin, beforePosition);
                         runOpenStatusArrowImageAnimation(view.findViewById(mStatusArrowViewId));
-                        beforePosition = position;
+                        beforePosition = itemPositioin;
 
                     } else { // 如果当前Item是打开状态
 
                         if (mCanClickClose) { // 如果允许点击关闭，则动画关闭当前Item
-                            runCloseExpandAnimation(childrenLayout, position, true);
+                            runCloseExpandAnimation(childrenLayout, itemPositioin, true);
                             runCloseStatusArrowImageAnimation(view.findViewById(mStatusArrowViewId));
-                            beforePosition = position;
+                            beforePosition = itemPositioin;
                         }
 
                     }
@@ -278,7 +315,7 @@ public class ExpandListView extends ListView {
                     if (beforePosition != - 1 && getExpandAdapter().isCanExpand(beforePosition) && !mAllItemCanOpen) { // 如果只允许一个Item打开，则关闭之前所打开的Item
                         runCloseExpandAnimation(((View) getExpandAdapter().getItem(beforePosition)).findViewById(R.id.expandlistview_children_layout), beforePosition, true);
                         runCloseStatusArrowImageAnimation(((View) getExpandAdapter().getItem(beforePosition)).findViewById(mStatusArrowViewId));
-                        beforePosition = position;
+                        beforePosition = itemPositioin;
                     }
                 }
             }
