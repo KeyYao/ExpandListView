@@ -282,14 +282,14 @@ public class ExpandListView extends ListView {
             }
 
             // 判断FooterView的个数
-            if (getFooterViewsCount() > 0) {
-                // 重新计算position
-                itemPositioin = position - getFooterViewsCount();
-                // 排除点击FooterView的position
-                if (itemPositioin >= getExpandAdapter().getCount()) {
-                    return;
-                }
-            }
+//            if (getFooterViewsCount() > 0) {
+//                // 重新计算position
+//                itemPositioin = position - getFooterViewsCount();
+//                // 排除点击FooterView的position
+//                if (itemPositioin >= getExpandAdapter().getCount()) {
+//                    return;
+//                }
+//            }
 
             if (!mRunningAnimation) {
                 if (getExpandAdapter().isCanExpand(itemPositioin)) { // 判断当前Item是否有子项可以展开
